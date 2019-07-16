@@ -14,7 +14,7 @@ That all could be solved with a strongly typed language which describes how stat
 actions looks like. That is far easier to understand than looking at the source code and
 also self documented. Actually, it could be used as a detail design document.
 
-Now, `UBDL` is still under development.
+*Now, `UBDL` is still under development.*
 
 # Language
 
