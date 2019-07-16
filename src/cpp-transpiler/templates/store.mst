@@ -1,0 +1,322 @@
+/* -------------------------------------*/
+/* Auto generated from UBDL, don't edit */
+/* -------------------------------------*/
+
+#ifndef _{{MODULE}}_H_
+#define _{{MODULE}}_H_
+
+#ifndef {{MODULE}}_API
+#define {{MODULE}}_API
+#endif
+
+#ifndef __cplusplus
+#error "this is C++"
+#endif
+
+#include <tuple>
+#include <functional>
+#include <vector>
+
+#ifndef UBDL_STRING
+#include <string>
+#define UBDL_STRING std::string
+#endif
+
+#ifndef UBDL_LIST
+#include <vector>
+#define UBDL_LIST std::vector
+#endif
+
+#ifndef UBDL_VARIANT
+#include <variant>
+#define UBDL_VARIANT std::variant
+#endif
+
+#ifndef UBDL_OPTIONAL
+#include <optional>
+#define UBDL_OPTIONAL std::optional
+#define UBDL_NULLOPT  std::nullopt
+#endif
+
+#ifdef {{MODULE}}_SERIALIZATION
+#include <json.hpp>
+using json = nlohmann::json;
+#endif
+
+{{#stores}}
+class {{MODULE}}_API {{store_name}}Store
+{
+public:
+  /// Reduced state.
+  struct State
+  {
+    {{#properties}}
+    /// TODO: insert docstrings here.
+    {{prop_type}} {{prop_snake_name}};
+    {{#comma}}
+
+    {{/comma}}
+    {{/properties}}
+  };
+
+  {{#actions}}
+  /// TODO: insert docstrings here.
+  struct {{action_type_name}}Action
+  {
+    {{#params}}
+    /// TODO: insert docstrings here.
+    {{param_type}} {{param_snake_name}};
+    {{/params}}
+    {{^params}}
+    // C++ don't like empty struct.
+    std::tuple<> _;
+    {{/params}}
+  };
+  {{#comma}}
+
+  {{/comma}}
+  {{/actions}}
+
+  /// Action variant index.
+  enum ActionIndex
+  {
+    {{#actions}}
+    ACTION_{{ACTION_SNAKE_NAME}}{{#comma}},{{/comma}}
+    {{/actions}}
+  };
+
+  /// Action variant.
+  typedef UBDL_VARIANT<
+    {{#actions}}
+    {{action_type_name}}Action{{#comma}},{{/comma}}
+    {{/actions}}
+  > Action;
+
+  {{#actions}}
+  /// Create and dispatch action, TODO: insert docstrings here.
+  void
+  {{action_snake_name}}(
+    {{#params}}
+    {{param_type}} {{param_snake_name}}{{#comma}},{{/comma}}
+    {{/params}}
+    {{^params}}
+    void
+    {{/params}}
+  );
+  {{#comma}}
+
+  {{/comma}}
+  {{/actions}}
+
+  typedef UBDL_OPTIONAL<State> OptionalState;
+
+  typedef std::function<void (
+    const OptionalState &previous_state
+  )> PropertyChanged;
+
+  /// State reducer.
+  typedef std::function<State (
+    const OptionalState &previous_state
+  , const Action &action
+  )> Reducer;
+
+  /// Initializes a new store.
+  {{store_name}}Store(
+    const OptionalState &initial_state
+  , Reducer reducer
+  );
+
+  /// Dispatch an action.
+  void
+  dispatch(
+    const Action &a
+  );
+
+  /// Registers a new observer.
+  /// \return unsubscribe function.
+  std::function<void ()>
+  subscribe(
+    PropertyChanged on_changed
+  );
+
+  /// Returns current state tree.
+  inline const OptionalState&
+  state(
+    void
+  ) const
+  {
+    return _state;
+  }
+
+private:
+  // Non-copyable.
+  {{store_name}}Store(const {{store_name}}Store&);
+  {{store_name}}Store& operator=(const {{store_name}}Store&);
+
+#ifdef {{MODULE}}_SERIALIZATION
+  friend void to_json(json &j, const {{store_name}}Store &s);
+  friend void from_json(const json& j, {{store_name}}Store &s);
+#endif
+
+  struct Observer
+  {
+    int token;
+    PropertyChanged on_changed;
+  };
+
+  OptionalState _state;
+  Reducer _reducer;
+  int _next_token;
+  std::vector<Observer> _observers;
+};
+
+#ifdef {{MODULE}}_SERIALIZATION
+{{MODULE}}_API void to_json(json &j, const {{store_name}}Store::State &ss);
+{{MODULE}}_API void from_json(const json& j, {{store_name}}Store::State &ss);
+{{MODULE}}_API void to_json(json &j, const {{store_name}}Store &s);
+{{MODULE}}_API void from_json(const json& j, {{store_name}}Store &s);
+{{#actions}}
+{{MODULE}}_API void to_json(json &j, const {{store_name}}Store::{{action_type_name}}Action &a);
+{{/actions}}
+{{MODULE}}_API void from_json(const json& j, {{store_name}}Store::Action &a);
+#endif
+{{#comma}}
+
+{{/comma}}
+{{/stores}}
+
+#endif // !_{{MODULE}}_H_
+
+#ifdef {{MODULE}}_IMPLEMENTATION
+
+#include <assert.h>
+#include <algorithm>
+
+{{#stores}}
+void
+{{store_name}}Store::dispatch(
+  const Action &a)
+{
+  auto previous_state = _state;
+  _state = _reducer(previous_state, a);
+  // raise observers
+  for (auto o = _observers.begin(); o != _observers.end(); ++o) {
+    o->on_changed(previous_state);
+  }
+}
+
+{{#actions}}
+void
+{{store_name}}Store::{{action_snake_name}}(
+  {{#params}}
+  {{param_type}} {{param_snake_name}}{{#comma}},{{/comma}}{{^comma}}){{/comma}}
+  {{/params}}
+  {{^params}}void){{/params}}
+{
+  {{action_type_name}}Action a;
+  {{#params}}
+  a.{{param_snake_name}} = {{param_snake_name}};
+  {{/params}}
+  dispatch(a);
+}
+{{#comma}}
+
+{{/comma}}
+{{/actions}}
+
+{{store_name}}Store::{{store_name}}Store(
+  const OptionalState &initial_state
+, Reducer reducer)
+: _state(initial_state)
+, _reducer(reducer)
+, _next_token(0)
+{
+  // nop
+}
+
+std::function<void ()>
+{{store_name}}Store::subscribe(
+  PropertyChanged on_changed)
+{
+  Observer ob;
+  const int token = _next_token++;
+  ob.token = token;
+  ob.on_changed = on_changed;
+  _observers.push_back(ob);
+  return [this, token]() { // unregister function
+    auto itr = std::find_if(_observers.begin(), _observers.end(),
+      [token](const Observer &o) { return o.token == token; } );
+    if (itr != _observers.end()) {
+      _observers.erase(itr);
+    }
+  };
+}
+
+#ifdef {{MODULE}}_SERIALIZATION
+
+void to_json(json &j, const {{store_name}}Store::State &ss)
+{
+  j = json {
+    {{#properties}}
+    { "{{prop_name}}", ss.{{prop_snake_name}} },
+    {{/properties}}
+    { "type", "{{module_dot_name}}.{{store_name}}" }
+  };
+}
+
+void from_json(const json& j, {{store_name}}Store::State &ss)
+{
+  assert(j.at("type") == "{{module_dot_name}}.{{store_name}}");
+  {{#properties}}
+  j.at("{{prop_name}}").get_to(ss.{{prop_snake_name}});
+  {{/properties}}
+}
+
+void to_json(json &j, const {{store_name}}Store &s)
+{
+  j = s._state.value_or({{store_name}}Store::State());
+}
+
+void from_json(const json& j, {{store_name}}Store &s)
+{
+  s._state = ({{store_name}}Store::State)j;
+}
+
+{{#actions}}
+void to_json(json &j, const {{store_name}}Store::{{action_type_name}}Action &a)
+{
+  j = json {
+    {{#params}}
+    { "{{param_name}}", a.{{param_snake_name}} },
+    {{/params}}
+    { "type", "{{module_dot_name}}.{{store_name}}.{{action_name}}" }
+  };
+}
+{{#comma}}
+
+{{/comma}}
+{{/actions}}
+
+void from_json(const json& j, {{store_name}}Store::Action &a)
+{
+  auto action_type = j.at("type");
+  {{#actions}}
+  if (action_type == "{{module_dot_name}}.{{store_name}}.{{action_name}}") {
+    {{store_name}}Store::{{action_type_name}}Action aa;
+    {{#params}}
+    j.at("{{param_name}}").get_to(aa.{{param_snake_name}});
+    {{/params}}
+    a = aa;
+    return;
+  }
+  {{/actions}}
+  assert(!"bad json");
+}
+
+#endif // {{MODULE}}_SERIALIZATION
+{{#comma}}
+
+{{/comma}}
+{{/stores}}
+
+#endif // {{MODULE}}_IMPLEMENTATION

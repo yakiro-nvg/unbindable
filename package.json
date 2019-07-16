@@ -1,0 +1,36 @@
+{
+  "name": "@yakiro-nvg/unbindable",
+  "version": "1.0.0",
+  "description": "Universal bindable generator",
+  "main": "src/index.js",
+  "bin": {
+    "@yakiro-nvg/unbindable": "bin/unbindable",
+    "unbindable": "bin/unbindable"
+  },
+  "files": [
+    "*.mst"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "mvvm",
+    "unbindable"
+  ],
+  "author": "Giang 'Yakiro' Nguyen",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yakiro-nvg/unbindable.git"
+  },
+  "dependencies": {
+    "arg": "^4.1.0",
+    "esm": "^3.2.25",
+    "inquirer": "^6.4.1",
+    "mustache": "^3.0.1"
+  }
+}

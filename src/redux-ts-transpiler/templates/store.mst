@@ -1,0 +1,61 @@
+/* -------------------------------------*/
+/* Auto generated from UBDL, don't edit */
+/* -------------------------------------*/
+
+/**
+ * Action variant 'type' key.
+ */
+export enum TypeKeys
+{
+  {{#actions}}
+  ACTION_{{ACTION_SNAKE_NAME}} = '{{module}}.{{store_name}}.{{action_name}}',
+  {{/actions}}
+  STATE = '{{module}}.{{store_name}}'
+}
+
+{{#actions}}
+/**
+ * TODO: insert docstrings here.
+ */
+export interface {{action_type_name}}Action
+{
+  {{#params}}
+  /**
+   * TODO: insert docstrings here.
+   */
+  {{param_name}}: {{param_type}}
+  {{#comma}}
+
+  {{/comma}}
+  {{/params}}
+  type: TypeKeys.ACTION_{{ACTION_SNAKE_NAME}}
+}
+{{#comma}}
+
+{{/comma}}
+{{/actions}}
+
+/**
+ * Action variant.
+ */
+export type Action =
+  {{#actions}}
+  | {{action_type_name}}Action
+  {{/actions}}
+
+/**
+ * Reduced state.
+ */
+export interface State
+{
+  {{#properties}}
+  /**
+   * TODO: insert docstrings here.
+   */
+  {{prop_name}}: {{prop_type}}
+  {{#comma}}
+
+  {{/comma}}
+  {{/properties}}
+  type: TypeKeys.STATE
+}
