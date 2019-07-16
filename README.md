@@ -38,7 +38,7 @@ solar.ts written!
 
 - C++ and Redux typescript transpiler.
 - Store, state and actions description.
-- C++ store bridge, used for debug utilities.
+- C++ store bridge, useful for debug utilities.
 
 # Coming soon
 
@@ -51,6 +51,6 @@ solar.ts written!
 Used in COMPASS architecture for debug. Basically, we need that to touch the application
 state and dispatch actions like a gentleman. My device is C++ based so we currently only
 support this language. At the remote site we could easily use standard RESTful clients to
-access these endpoints. The source code for bridges is in `bridge` folder.
+access these endpoints. The source code for bridges is in `bridge` folder.g
 
 ![Store bridge](docs/imgs/bridge.png?raw=true "COMPASS store bridge")
